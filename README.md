@@ -48,7 +48,7 @@ A modern, full-stack portfolio management application built with Next.js 16, Pri
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/LakshanDS/Portfolio.git
    cd Portfolio
    ```
 

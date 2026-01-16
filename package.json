@@ -1,0 +1,67 @@
+{
+  "name": "portfolio",
+  "version": "1.0.0",
+  "author": "",
+  "main": "index.js",
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.2.0",
+    "@react-pdf/renderer": "^4.3.2",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.4.23",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.6.0",
+    "clsx": "^2.1.1",
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.1.1",
+    "framer-motion": "^12.23.26",
+    "next": "^16.1.1",
+    "otpauth": "^9.4.1",
+    "postcss": "^8.5.6",
+    "qrcode": "^1.5.4",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-icons": "^5.5.0",
+    "react-markdown": "^10.1.0",
+    "recharts": "^3.6.0",
+    "remark-gfm": "^4.0.1",
+    "systeminformation": "^5.30.3",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3"
+  },
+  "description": "",
+  "directories": {
+    "doc": "docs"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:seed": "tsx prisma/seed-fresh.ts",
+    "db:reset": "prisma migrate reset --force && tsx prisma/seed-fresh.ts",
+    "db:seed": "tsx prisma/seed-fresh.ts",
+    "seed-admin": "tsx prisma/seed-admin.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed-fresh.ts"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@prisma/client": "^7.2.0",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/qrcode": "^1.5.6",
+    "prisma": "^7.2.0",
+    "ts-node": "^1.7.1",
+    "tsx": "^4.21.0"
+  }
+}

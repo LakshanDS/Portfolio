@@ -234,7 +234,7 @@ See `schema.sql` for complete database structure and relationships.
 Access the admin panel at `/jasladmin/login`.
 
 **Authentication:**
-- The admin panel uses Two-Factor Authentication (2FA) with TOTP
+- The admin panel uses TOTP-based admin authentication
 - First-time setup requires scanning a QR code with Google Authenticator or similar app
 - The TOTP secret is stored in the database and used to generate time-based codes
 - Sessions are automatically managed with expiration

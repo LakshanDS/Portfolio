@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from "next/server";
+import { unlink } from "fs/promises";
+import { existsSync } from "fs";
+import path from "path";
+
+const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+
+/**
+ * Delete File API Endpoint
+ * 
+ * Deletes a file from the public/uploads directory
+ * Only allows deletion of files in the uploads directory for security
+ */
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { filePath } = body;
+
+    if (!filePath || typeof filePath !== "string") {
+      return NextResponse.json(
+        { success: false, error: "Invalid file path" },
+        { status: 400 }
+      );
+    }
+
+    // Only allow deletion of files in the uploads directory
+    if (!filePath.startsWith("/uploads/")) {
+      return NextResponse.json(
+        { success: false, error: "Can only delete uploaded files" },
+        { status: 400 }
+      );
+    }
+
+    // Construct full file path
+    const fullPath = path.join(process.cwd(), "public", filePath);
+
+    // Check if file exists
+    if (!existsSync(fullPath)) {
+      return NextResponse.json({
+        success: true,
+        message: "File does not exist",
+      });
+    }
+
+    // Delete the file
+    await unlink(fullPath);
+
+    return NextResponse.json({
+      success: true,
+      message: "File deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting file:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to delete file" },
+      { status: 500 }
+    );
+  }
+}

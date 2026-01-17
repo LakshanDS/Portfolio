@@ -263,6 +263,7 @@ export async function updateProfile(id: string, data: any) {
   if (data.linkedinUrl !== undefined) updates.linkedinUrl = data.linkedinUrl;
   if (data.whatsappUrl !== undefined) updates.whatsappUrl = data.whatsappUrl;
   if (data.gender !== undefined) updates.gender = data.gender;
+  if (data.profileImage !== undefined) updates.profileImage = data.profileImage;
 
   return await prisma.profile.update({ where: { id }, data: updates });
 }

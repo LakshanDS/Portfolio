@@ -45,7 +45,7 @@ const defaultSettings: HomepageSettings = {
     title: "root@portfolio: Hi, I'm Lakshan!",
     tagline: "DevOps Engineer & Cloud Architect",
     description:
-      "I bridge the gap between development and operations to deliver reliable software faster. Specialist in Ubuntu, Oracle, GitHub, GCP, and AWS.",
+      "I bridge the gap between development and operations to deliver ||reliable software faster.|| Specialist in Ubuntu, Oracle, GitHub, GCP, and AWS.",
     primaryButtonText: "View Projects",
     primaryButtonLink: "/projects",
     secondaryButtonText: "Contact Me",
@@ -75,8 +75,8 @@ const defaultSettings: HomepageSettings = {
     },
     cta: {
       enabled: true,
-      title: "Get In Touch",
-      subtitle: "Let's Build Something Amazing",
+      title: "Let's Build Something Together",
+      subtitle: "I am currently open to new opportunities and collaborations. Check out my full project portfolio or reach out directly.",
     },
   },
 };
@@ -87,6 +87,8 @@ export default function AdminHomepage() {
   const [hasChanges, setHasChanges] = useState(false);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [previousImageUrl, setPreviousImageUrl] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -119,15 +121,27 @@ export default function AdminHomepage() {
 
   const handleSave = async () => {
     try {
-      const response = await fetch("/api/homepage-settings", {
+      // Delete old image if it was uploaded (not a default static file)
+      if (previousImageUrl && previousImageUrl.startsWith("/uploads/")) {
+        const response = await fetch("/api/delete-file", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filePath: previousImageUrl }),
+        });
+        if (response.ok) {
+          setPreviousImageUrl("");
+        }
+      }
+
+      const settingsResponse = await fetch("/api/homepage-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
       });
 
-      if (response.ok) {
+      if (settingsResponse.ok) {
         setHasChanges(false);
-        alert("Settings saved successfully to homepage-settings.json!");
+        alert("Settings saved successfully!");
       } else {
         alert("Failed to save settings");
       }
@@ -145,12 +159,42 @@ export default function AdminHomepage() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setImagePreview(url);
-      updateHero("imageUrl", url);
+    if (!file) return;
+
+    setIsUploading(true);
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("prefix", "hero");
+
+      // Upload file to server
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to upload image");
+      }
+
+      const data = await response.json();
+
+      // Store previous image URL for cleanup
+      setPreviousImageUrl(settings.hero.imageUrl);
+
+      // Update with new file path
+      setImagePreview(data.filePath);
+      updateHero("imageUrl", data.filePath);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert(error instanceof Error ? error.message : "Failed to upload image");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -253,7 +297,12 @@ export default function AdminHomepage() {
                   fill
                   className="object-cover"
                 />
-                <label className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/80 to-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer">
+                {isUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+                    <div className="w-6 h-6 border-2 border-[#4ADE80] border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+                <label className={`absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/80 to-black/40 transition-all duration-300 cursor-pointer ${isUploading ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}>
                   <div className="text-center text-white">
                     <FaUpload size={16} className="mx-auto mb-1" />
                     <span className="text-[10px] font-medium">Change</span>
@@ -262,6 +311,7 @@ export default function AdminHomepage() {
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
+                    disabled={isUploading}
                     className="hidden"
                   />
                 </label>
@@ -271,7 +321,7 @@ export default function AdminHomepage() {
                   Profile Image
                 </h3>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">
-                  Hover and click to change your profile picture
+                  {isUploading ? "Uploading..." : "Hover and click to change your profile picture"}
                 </p>
               </div>
             </div>

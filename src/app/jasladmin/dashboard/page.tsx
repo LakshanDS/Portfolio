@@ -370,7 +370,7 @@ export default function AdminDashboard() {
           <Card className="flex flex-col flex-1 min-h-[300px] bg-[#0D1117] border border-[#1F2937] overflow-hidden">
             <div className="p-3 bg-[#161B22] border-b border-[#1F2937] flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[#4ADE80] animate-pulse"></div>
-              <span className="text-xs font-semibold text-[#E6EDF3] uppercase tracking-wider">Messages Stream</span>
+              <span className="text-xs font-semibold text-[#E6EDF3] uppercase tracking-wider">Project Comments</span>
               <span className="ml-auto text-[10px] text-[#9CA3AF] bg-[#1F2937] px-1.5 py-0.5 rounded-full">{data.comments.length}</span>
             </div>
 

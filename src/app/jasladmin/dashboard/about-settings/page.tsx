@@ -85,7 +85,7 @@ const defaultSettings: AboutSettings = {
     profileImage: "/myself.jpeg",
     availabilityBadge: {
       enabled: true,
-      text: "Available for new projects"
+      text: "Available for Work"
     },
     terminalBio: [
       "$ whoami",
@@ -224,12 +224,46 @@ export default function AdminAboutSettings() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setImagePreview(url);
-      updateHero('profileImage', url);
+    if (!file) return;
+
+    try {
+      // Upload file to server
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('prefix', 'profile');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Delete old image if it exists and is an uploaded file
+        if (settings.hero.profileImage && settings.hero.profileImage.startsWith('/uploads/')) {
+          try {
+            await fetch('/api/delete-file', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ filePath: settings.hero.profileImage })
+            });
+          } catch (error) {
+            console.error('Error deleting old image:', error);
+          }
+        }
+
+        // Update with new file path
+        setImagePreview(result.filePath);
+        updateHero('profileImage', result.filePath);
+      } else {
+        alert(`Upload failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image');
     }
   };
 
@@ -276,6 +310,20 @@ export default function AdminAboutSettings() {
     setSettings({
       ...settings,
       letsConnect: { ...settings.letsConnect, [platform]: { ...settings.letsConnect[platform], [field]: value } }
+    });
+    setHasChanges(true);
+  };
+
+  const updateAvailabilityBadge = (text: string) => {
+    setSettings({
+      ...settings,
+      hero: {
+        ...settings.hero,
+        availabilityBadge: {
+          ...settings.hero.availabilityBadge,
+          text
+        }
+      }
     });
     setHasChanges(true);
   };
@@ -528,6 +576,21 @@ export default function AdminAboutSettings() {
                 <h3 className="text-sm font-semibold text-[#E6EDF3]">Profile Image</h3>
                 <p className="text-xs text-[#9CA3AF] mt-0.5">Hover and click to change your profile picture</p>
               </div>
+            </div>
+
+            <div className="space-y-1.5 pt-3 border-t border-[#1F2937]">
+              <label className="flex items-center gap-2 text-xs font-semibold text-[#E6EDF3]">
+                <FaToggleOn size={11} className="text-[#4ADE80]" />
+                Availability
+              </label>
+              <input
+                type="text"
+                value={settings.hero.availabilityBadge.text}
+                onChange={(e) => updateAvailabilityBadge(e.target.value)}
+                className="w-full px-3 py-2 bg-[#1F2937]/50 border border-[#374151] rounded-lg text-[#E6EDF3] focus:outline-none focus:ring-2 focus:ring-[#4ADE80]/50 focus:border-[#4ADE80] text-sm transition-all"
+                placeholder="Available for Work"
+              />
+              <p className="text-[10px] text-[#6B7280]">Customize your availability status badge text</p>
             </div>
 
             <div className="space-y-1.5">

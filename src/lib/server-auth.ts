@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import crypto from "crypto";
 
 const SESSION_COOKIE_NAME = "admin_session";
-const SESSION_DURATION = 5 * 60 * 1000; // 5 minutes
+const SESSION_DURATION = 10 * 60 * 1000; // 10 minutes
 
 export interface Session {
   userId: string;

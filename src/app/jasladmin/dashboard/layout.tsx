@@ -104,10 +104,10 @@ export default function AdminLayout({
       if (renewalTimeout) {
         clearTimeout(renewalTimeout);
       }
-      // Renew session after 30 seconds of inactivity
+      // Renew session after 2 seconds of activity (debounced)
       renewalTimeout = setTimeout(() => {
         renewSessionOnActivity();
-      }, 30000);
+      }, 2000);
     };
 
     // Add event listeners for user activity

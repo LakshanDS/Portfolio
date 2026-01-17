@@ -79,7 +79,7 @@ jobs:
           cp tsconfig.json deploy-package/
           
           # Copy Prisma config if exists
-          [ -f prisma.config.ts ] && cp prisma.config.ts deploy-package/
+          [ -f prisma.config.js ] && cp prisma.config.js deploy-package/
           
           # Create tarball for efficient transfer (much smaller now!)
           tar -czf deploy-package.tar.gz deploy-package

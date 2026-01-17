@@ -11,20 +11,30 @@ export async function GET() {
       si.networkStats(),
     ]);
 
+    // Debug logging to help diagnose issues
+    console.log('System info raw data:', {
+      mem: { total: mem.total, used: mem.used, active: mem.active, free: mem.free },
+      fs: fs.map(f => ({ fs: f.fs, mount: f.mount, size: f.size, used: f.used, use: f.use })),
+      network: network[0]
+    });
+
     const net = network[0] || { rx_sec: 0, tx_sec: 0 };
+
+    // Find the root filesystem (mount point '/') instead of using the first filesystem
+    const rootFs = fs.find(f => f.mount === '/') || fs[0];
 
     const systemInfo = {
       cpuLoad: Math.round(cpu.currentLoad),
       memory: {
         total: mem.total,
         free: mem.free,
-        used: mem.active,
-        usagePercentage: Math.round((mem.active / mem.total) * 100),
+        used: mem.used, // Use mem.used instead of mem.active for better Linux compatibility
+        usagePercentage: Math.round((mem.used / mem.total) * 100),
       },
       storage: {
-        total: fs[0]?.size || 0,
-        used: fs[0]?.used || 0,
-        usagePercentage: Math.round(fs[0]?.use || 0),
+        total: rootFs?.size || 0,
+        used: rootFs?.used || 0,
+        usagePercentage: Math.round(rootFs?.use || 0),
       },
       network: {
         rx_sec: Math.round(net.rx_sec || 0), // Bytes per second download

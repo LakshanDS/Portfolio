@@ -127,7 +127,7 @@ jobs:
             tar -xzf /tmp/deploy-package.tar.gz -C /tmp
             
             # Copy built files from deployment (NO node_modules - we'll install fresh)
-            cp -r /tmp/deploy-package/* ./
+            cp -a /tmp/deploy-package/. ./
             
             # Restore preserved database and .env IMMEDIATELY
             [ -f "/tmp/dev.db.preserve" ] && cp /tmp/dev.db.preserve dev.db || true

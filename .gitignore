@@ -2,7 +2,8 @@
 /node_modules
 /.pnp
 .pnp.js
-package-lock.json
+# Keep package-lock.json for consistent builds
+# package-lock.json  # REMOVED - this should be committed
 yarn.lock
 pnpm-lock.yaml
 

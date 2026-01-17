@@ -296,7 +296,7 @@ export default async function Home() {
                   </h3>
                   <div className="h-1 w-20 bg-[#4ADE80] rounded-full mb-6"></div>
 
-                  <p className="text-[#9CA3AF] text-xm leading-relaxed mb-6">
+                  <p className="text-[#9CA3AF] text-[18px] leading-relaxed mb-4">
                     Life, like any great system, evolves one step at a time.
                     This is my ongoing log of growth, challenges, and
                     self-learning of life and beyond DevOps.

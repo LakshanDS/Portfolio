@@ -31,6 +31,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'  # Caches npm dependencies for faster builds
 
       # ============================================
       # 3. INSTALL DEPENDENCIES

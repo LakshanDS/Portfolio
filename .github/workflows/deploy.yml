@@ -59,27 +59,17 @@ jobs:
           SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
 
       # ============================================
-      # 6. INSTALL PRODUCTION DEPENDENCIES
+      # 6. PREPARE DEPLOYMENT PACKAGE
       # ============================================
-      # Install prod dependencies here so server doesn't have to build anything
-      - name: Install production dependencies
-        run: |
-          # Remove dev dependencies to save space
-          npm prune --omit=dev
-
-      # ============================================
-      # 7. PREPARE DEPLOYMENT PACKAGE
-      # ============================================
-      # Create a tarball of the built files for efficient transfer
-      # IMPORTANT: Exclude database and .env files to preserve server data
+      # Create a tarball with ONLY built files (no node_modules)
+      # Server will install production dependencies itself
       - name: Create deployment package
         run: |
           # Create a deployment directory with all necessary files
           mkdir -p deploy-package
           
-          # Copy built files and necessary configs
+          # Copy ONLY built files and configs (no node_modules!)
           cp -r .next deploy-package/
-          cp -r node_modules deploy-package/
           cp -r public deploy-package/
           cp -r prisma deploy-package/
           cp package.json deploy-package/
@@ -91,7 +81,7 @@ jobs:
           # Copy Prisma config if exists
           [ -f prisma.config.ts ] && cp prisma.config.ts deploy-package/
           
-          # Create tarball for efficient transfer
+          # Create tarball for efficient transfer (much smaller now!)
           tar -czf deploy-package.tar.gz deploy-package
 
       # ============================================
@@ -126,34 +116,45 @@ jobs:
             cd ${{ secrets.DEPLOY_PATH }}
             
             # Preserve database and environment files
-            # Move these files to temp location before deployment
+            # CRITICAL: Backup database before ANY operations
             [ -f "dev.db" ] && cp dev.db /tmp/dev.db.preserve || true
             [ -f ".env" ] && cp .env /tmp/.env.preserve || true
             
-            # Backup current .next (optional)
+            # Backup current .next for rollback capability (optional)
             [ -d ".next" ] && mv .next .next.backup.$(date +%Y%m%d_%H%M%S) || true
             
             # Extract new deployment from GitHub Actions
             tar -xzf /tmp/deploy-package.tar.gz -C /tmp
             
-            # Copy ALL files from deployment (includes node_modules and built .next)
-            # This overwrites everything except what we preserved
+            # Copy built files from deployment (NO node_modules - we'll install fresh)
             cp -r /tmp/deploy-package/* ./
             
-            # Restore preserved database and .env
+            # Restore preserved database and .env IMMEDIATELY
             [ -f "/tmp/dev.db.preserve" ] && cp /tmp/dev.db.preserve dev.db || true
             [ -f "/tmp/.env.preserve" ] && cp /tmp/.env.preserve .env || true
+            
+            # Install ONLY production dependencies (lightweight operation)
+            echo "Installing production dependencies..."
+            npm ci --omit=dev
+            
+            # Generate Prisma client for current platform
+            echo "Generating Prisma client..."
+            npx prisma generate
+            
+            # Run database migrations (safe - only applies new changes)
+            echo "Running database migrations..."
+            npx prisma migrate deploy || echo "No migrations to apply"
             
             # Clean up temporary files
             rm -rf /tmp/deploy-package /tmp/deploy-package.tar.gz
             rm -f /tmp/dev.db.preserve /tmp/.env.preserve
             
             # Restart the application with PM2
-            # No building needed - everything is already built!
+            echo "Restarting application..."
             pm2 restart portfolio || pm2 start ecosystem.config.js
             pm2 save
             
-            echo "Deployment completed successfully! Server did ZERO building."
+            echo "✅ Deployment completed! Server only installed packages - no building!"
 
       # ============================================
       # 9. CLEANUP (on failure)

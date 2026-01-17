@@ -1,0 +1,163 @@
+# GitHub Actions workflow to build and deploy the Portfolio site
+# This workflow builds the Next.js app on GitHub's servers and deploys via SSH
+name: Build and Deploy Portfolio
+
+on:
+  push:
+    branches:
+      - main  # Change this to your default branch if different
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
+
+env:
+  NODE_VERSION: '20'  # Node.js version to use
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ============================================
+      # 1. CHECKOUT CODE
+      # ============================================
+      # This step checks out your repository code
+      # The GITHUB_TOKEN is automatically provided and has read access to the repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ============================================
+      # 2. SETUP NODE.JS
+      # ============================================
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'  # Caches npm dependencies for faster builds
+
+      # ============================================
+      # 3. INSTALL DEPENDENCIES
+      # ============================================
+      - name: Install dependencies
+        run: npm ci  # Clean install - faster and more reliable than npm install
+
+      # ============================================
+      # 4. GENERATE PRISMA CLIENT
+      # ============================================
+      # Prisma needs to generate the client before building
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      # ============================================
+      # 5. BUILD THE APPLICATION
+      # ============================================
+      # This is where the heavy lifting happens on GitHub's servers
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          # Add any environment variables needed for build
+          # These should be set as GitHub Secrets
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+
+      # ============================================
+      # 6. INSTALL PRODUCTION DEPENDENCIES
+      # ============================================
+      # Install prod dependencies here so server doesn't have to build anything
+      - name: Install production dependencies
+        run: |
+          # Remove dev dependencies to save space
+          npm prune --omit=dev
+
+      # ============================================
+      # 7. PREPARE DEPLOYMENT PACKAGE
+      # ============================================
+      # Create a tarball of the built files for efficient transfer
+      # IMPORTANT: Exclude database and .env files to preserve server data
+      - name: Create deployment package
+        run: |
+          # Create a deployment directory with all necessary files
+          mkdir -p deploy-package
+          
+          # Copy built files and necessary configs
+          cp -r .next deploy-package/
+          cp -r node_modules deploy-package/
+          cp -r public deploy-package/
+          cp -r prisma deploy-package/
+          cp package.json deploy-package/
+          cp package-lock.json deploy-package/
+          cp next.config.ts deploy-package/
+          cp middleware.ts deploy-package/
+          cp tsconfig.json deploy-package/
+          
+          # Copy Prisma config if exists
+          [ -f prisma.config.ts ] && cp prisma.config.ts deploy-package/
+          
+          # Create tarball for efficient transfer
+          tar -czf deploy-package.tar.gz deploy-package
+
+      # ============================================
+      # 7. DEPLOY VIA SSH
+      # ============================================
+      # Upload and extract on your server
+      - name: Deploy to server via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "deploy-package.tar.gz"
+          target: "/tmp"
+
+      # ============================================
+      # 8. EXTRACT AND RESTART SERVICE
+      # ============================================
+      - name: Extract and restart application
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            # Stop the current application
+            pm2 stop portfolio || true
+            
+            # Navigate to deployment directory
+            cd ${{ secrets.DEPLOY_PATH }}
+            
+            # Preserve database and environment files
+            # Move these files to temp location before deployment
+            [ -f "dev.db" ] && cp dev.db /tmp/dev.db.preserve || true
+            [ -f ".env" ] && cp .env /tmp/.env.preserve || true
+            
+            # Backup current .next (optional)
+            [ -d ".next" ] && mv .next .next.backup.$(date +%Y%m%d_%H%M%S) || true
+            
+            # Extract new deployment from GitHub Actions
+            tar -xzf /tmp/deploy-package.tar.gz -C /tmp
+            
+            # Copy ALL files from deployment (includes node_modules and built .next)
+            # This overwrites everything except what we preserved
+            cp -r /tmp/deploy-package/* ./
+            
+            # Restore preserved database and .env
+            [ -f "/tmp/dev.db.preserve" ] && cp /tmp/dev.db.preserve dev.db || true
+            [ -f "/tmp/.env.preserve" ] && cp /tmp/.env.preserve .env || true
+            
+            # Clean up temporary files
+            rm -rf /tmp/deploy-package /tmp/deploy-package.tar.gz
+            rm -f /tmp/dev.db.preserve /tmp/.env.preserve
+            
+            # Restart the application with PM2
+            # No building needed - everything is already built!
+            pm2 restart portfolio || pm2 start ecosystem.config.js
+            pm2 save
+            
+            echo "Deployment completed successfully! Server did ZERO building."
+
+      # ============================================
+      # 9. CLEANUP (on failure)
+      # ============================================
+      - name: Cleanup on failure
+        if: failure()
+        run: echo "Build or deployment failed. Check the logs above for details."

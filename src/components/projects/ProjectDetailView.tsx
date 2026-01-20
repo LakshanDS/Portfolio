@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { MermaidDiagram } from "@/components/ui/MermaidDiagram";
+import { ExpandableModal } from "@/components/ui/ExpandableModal";
 import { FaGithub, FaExternalLinkAlt, FaChevronLeft, FaCode, FaListUl } from "react-icons/fa";
 import { Project } from "@/lib/types";
 
@@ -17,6 +19,9 @@ interface ProjectDetailViewProps {
 export function ProjectDetailView({ project }: ProjectDetailViewProps) {
   const [activeSection, setActiveSection] = useState("");
   const [headings, setHeadings] = useState<{ id: string; text: string; level: number }[]>([]);
+  const [expandedContent, setExpandedContent] = useState<string | null>(null);
+  const [expandedType, setExpandedType] = useState<"image" | "mermaid" | null>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (!project.content) {
@@ -81,6 +86,27 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [headings]);
 
+  // Auto-scroll the sidebar nav to keep active item visible
+  useEffect(() => {
+    if (activeSection && navRef.current) {
+      const activeElement = navRef.current.querySelector(`a[href="#${activeSection}"]`) as HTMLElement;
+      if (activeElement) {
+        const container = navRef.current;
+        const elementTop = activeElement.offsetTop;
+        const elementBottom = elementTop + activeElement.offsetHeight;
+        const containerTop = container.scrollTop;
+        const containerBottom = containerTop + container.clientHeight;
+
+        // Custom scroll logic to ensure only the sidebar scrolls and doesn't affect main window
+        if (elementTop < containerTop) {
+          container.scrollTo({ top: elementTop, behavior: "smooth" });
+        } else if (elementBottom > containerBottom) {
+          container.scrollTo({ top: elementBottom - container.clientHeight, behavior: "smooth" });
+        }
+      }
+    }
+  }, [activeSection]);
+
   const components = {
     h1: ({ children }: any) => {
       const id = children?.toString().toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
@@ -105,16 +131,64 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
         {children}
       </a>
     ),
-    code: ({ node, inline, className, children, ...props }: any) => {
-      return inline ? (
+    code: ({ node, className, children, ...props }: any) => {
+      const match = /language-(\w+)/.exec(className || "");
+      const language = match ? match[1] : "";
+
+      // Check if this is a block code - either has language class OR is inside pre tag
+      // When inside a pre tag via ReactMarkdown, node.tagName will be 'code' but parent is pre
+      const isInPre = node?.position?.start?.line !== node?.position?.end?.line ||
+        String(children).includes('\n');
+      const isBlock = Boolean(match) || isInPre;
+
+      // Handle mermaid code blocks
+      if (isBlock && language === "mermaid") {
+        const chart = String(children).replace(/\n$/, "");
+        return (
+          <div
+            onClick={() => {
+              setExpandedContent(chart);
+              setExpandedType("mermaid");
+            }}
+            className="cursor-pointer hover:ring-2 hover:ring-[#4ADE80] transition-all rounded-lg"
+            title="Click to expand diagram"
+          >
+            <MermaidDiagram chart={chart} />
+          </div>
+        );
+      }
+
+      // For block code, return styled code with proper whitespace preservation
+      if (isBlock) {
+        return (
+          <code
+            className="font-mono text-sm text-[#E6EDF3] block"
+            style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}
+            {...props}
+          >
+            {children}
+          </code>
+        );
+      }
+
+      // Inline code
+      return (
         <code className="bg-[#1F2937] text-[#4ADE80] px-1.5 py-0.5 rounded font-mono text-sm" {...props}>
           {children}
         </code>
-      ) : (
+      );
+    },
+    pre: ({ children }: any) => {
+      // Check if this contains a mermaid diagram (MermaidDiagram returns a div, not code)
+      const childType = children?.type?.name || children?.type;
+      if (childType === 'MermaidDiagram' || childType === 'MermaidDiagramInner') {
+        return <>{children}</>;
+      }
+
+      // Wrap code blocks in styled container
+      return (
         <div className="bg-[#0D1117] rounded-lg p-4 mb-6 border border-[#1F2937] overflow-x-auto shadow-inner">
-          <code className="font-mono text-sm text-[#E6EDF3]" {...props}>
-            {children}
-          </code>
+          {children}
         </div>
       );
     },
@@ -124,7 +198,14 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
       </blockquote>
     ),
     img: ({ src, alt }: any) => (
-      <div className="my-8 rounded-xl overflow-hidden border border-[#1F2937] shadow-2xl">
+      <div
+        className="my-8 rounded-xl overflow-hidden border border-[#1F2937] shadow-2xl cursor-pointer hover:ring-2 hover:ring-[#4ADE80] transition-all"
+        onClick={() => {
+          setExpandedContent(src);
+          setExpandedType("image");
+        }}
+        title="Click to expand image"
+      >
         <Image src={src} alt={alt} width={800} height={400} className="w-full h-auto" unoptimized />
         {alt && <div className="bg-[#0D1117] p-2 text-center text-xs text-[#6B7280] font-mono">{alt}</div>}
       </div>
@@ -132,7 +213,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
   };
 
   return (
-    <div className="bg-[#0B0F14] min-h-screen relative overflow-hidden">
+    <div className="bg-[#0B0F14] min-h-screen relative">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(74,222,128,0.05),transparent_70%)] pointer-events-none"></div>
       <nav className="fixed top-0 left-0 right-0 h-16 bg-[#0B0F14]/80 backdrop-blur-md border-b border-[#1F2937] z-50 px-6">
         <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
@@ -207,8 +288,8 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          <div className="hidden lg:block lg:col-span-3">
-            <div className="sticky top-28 space-y-8">
+          <aside className="hidden lg:block lg:col-span-3">
+            <div className="sticky top-24 space-y-6">
               <div className="space-y-3 p-6 rounded-xl bg-[#111827]/50 border border-[#1F2937]">
                 {project.demoUrl ? (
                   <Button className="w-full justify-center" variant="primary" onClick={() => { if (project.demoUrl) window.open(project.demoUrl, '_blank'); }}>
@@ -232,11 +313,11 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
 
               {/* Table of Contents */}
               {headings.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-mono text-[#4ADE80] uppercase tracking-wider mb-4 pl-2 border-l-2 border-[#4ADE80]">
+                <div className="flex flex-col max-h-[calc(100vh-16rem)]">
+                  <h3 className="text-xs font-mono text-[#4ADE80] uppercase tracking-wider mb-4 pl-2 border-l-2 border-[#4ADE80] flex-shrink-0">
                     Checkpoints
                   </h3>
-                  <nav className="space-y-1 border-l border-[#1F2937] ml-0.5">
+                  <nav ref={navRef} className="space-y-1 border-l border-[#1F2937] ml-0.5 overflow-y-auto pr-2 relative">
                     {headings.map((heading) => (
                       <a
                         key={heading.id}
@@ -258,7 +339,7 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                 </div>
               )}
             </div>
-          </div>
+          </aside>
 
           {/* Main Content */}
           <div className="lg:col-span-9">
@@ -302,7 +383,34 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
           </div>
 
         </div>
-      </main>
-    </div>
+      </main >
+
+      <ExpandableModal
+        isOpen={!!expandedContent}
+        onClose={() => {
+          setExpandedContent(null);
+          setExpandedType(null);
+        }}
+      >
+        {expandedContent && expandedType === "image" && (
+          <Image
+            src={expandedContent}
+            alt="Expanded view"
+            width={1200}
+            height={800}
+            className="w-auto h-auto max-w-[90vw] max-h-[90vh] object-contain"
+            unoptimized
+          />
+        )}
+        {expandedContent && expandedType === "mermaid" && (
+          <div className="bg-[#0D1117] p-4 rounded-lg overflow-hidden w-[95vw] h-[90vh] flex flex-col">
+            <MermaidDiagram
+              chart={expandedContent}
+              className="!p-0 !m-0 !border-0 !shadow-none w-full h-full flex items-center justify-center [&>svg]:w-full [&>svg]:h-full [&>svg]:max-w-none"
+            />
+          </div>
+        )}
+      </ExpandableModal>
+    </div >
   );
 }

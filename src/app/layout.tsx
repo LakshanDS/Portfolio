@@ -8,10 +8,14 @@ import { Suspense } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Lakshan De Silva | Senior Engineer",
-  description: "Portfolio of Lakshan De Silva - Senior DevOps Engineer showcasing projects, roadmap, and expertise",
-};
+import { getProfile } from "@/lib/data";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const profile = await getProfile();
+  return {
+    title: profile ? `${profile.name} | ${profile.title}` : "Lakshan De Silva | DevOps & Cloud Engineer",
+  };
+}
 
 export default function RootLayout({
   children,

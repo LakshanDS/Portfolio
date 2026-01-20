@@ -47,6 +47,15 @@ jobs:
         run: npx prisma generate
 
       # ============================================
+      # 4b. INITIALIZE DATABASE
+      # ============================================
+      # Create the database schema so the build doesn't fail during SSG
+      - name: Initialize Database
+        run: npx prisma db push --accept-data-loss
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # ============================================
       # 5. BUILD THE APPLICATION
       # ============================================
       # This is where the heavy lifting happens on GitHub's servers

@@ -163,7 +163,7 @@ export default async function Home() {
                 <h3 className="text-[#E6EDF3] text-2xl md:text-3xl font-bold leading-tight pb-3">
                   {settings.sections?.competencies?.title || ""}
                 </h3>
-                <Link href="/competencies">
+                <Link href="/about">
                   <Button variant="ghost" className="group">
                     View All{" "}
                     <span className="group-hover:translate-x-1 transition-transform ml-2">

@@ -24,7 +24,7 @@ export function CallToAction({
                 Contact Me
               </Button>
             </a>
-            <a href="/resume.pdf" target="_blank" rel="noopener noreferrer">
+            <a href="/api/download-resume" target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="md">
                 Download Resume
               </Button>

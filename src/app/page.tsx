@@ -312,7 +312,7 @@ export default async function Home() {
                 <div className="mt-auto">
                   {/* In Progress Section (Flat) */}
                   <div className="relative group">
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-4 mt-4">
                       <div className="w-2 h-2 rounded-full bg-[#4ADE80] animate-pulse"></div>
                       <span className="text-[#4ADE80] font-mono text-sm uppercase tracking-wider">
                         Current Focus
@@ -343,10 +343,10 @@ export default async function Home() {
 
                     {roadmapItems.filter((i) => i.status === "in-progress")
                       .length === 0 && (
-                      <p className="text-[#6B7280] italic">
-                        No active items currently in progress.
-                      </p>
-                    )}
+                        <p className="text-[#6B7280] italic">
+                          No active items currently in progress.
+                        </p>
+                      )}
                   </div>
 
                   {/* Categories List */}
@@ -377,15 +377,15 @@ export default async function Home() {
                           {Array.from(
                             new Set(roadmapItems.map((item) => item.category)),
                           ).length > 6 && (
-                            <span className="px-3 py-1.5 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/20 text-xs font-mono text-[#4ADE80] flex items-center">
-                              +
-                              {Array.from(
-                                new Set(
-                                  roadmapItems.map((item) => item.category),
-                                ),
-                              ).length - 6}
-                            </span>
-                          )}
+                              <span className="px-3 py-1.5 rounded-lg bg-[#4ADE80]/10 border border-[#4ADE80]/20 text-xs font-mono text-[#4ADE80] flex items-center">
+                                +
+                                {Array.from(
+                                  new Set(
+                                    roadmapItems.map((item) => item.category),
+                                  ),
+                                ).length - 6}
+                              </span>
+                            )}
                         </div>
                       </div>
                     </>

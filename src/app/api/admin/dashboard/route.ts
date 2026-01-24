@@ -4,23 +4,12 @@ import si from "systeminformation";
 
 export async function GET() {
   try {
-    const [cpu, mem, fs, network] = await Promise.all([
+    const [cpu, mem, fs] = await Promise.all([
       si.currentLoad(),
       si.mem(),
       si.fsSize(),
-      si.networkStats(),
     ]);
 
-    // Debug logging to help diagnose issues
-    console.log('System info raw data:', {
-      mem: { total: mem.total, used: mem.used, active: mem.active, free: mem.free },
-      fs: fs.map(f => ({ fs: f.fs, mount: f.mount, size: f.size, used: f.used, use: f.use })),
-      network: network[0]
-    });
-
-    const net = network[0] || { rx_sec: 0, tx_sec: 0 };
-
-    // Find the root filesystem (mount point '/') instead of using the first filesystem
     const rootFs = fs.find(f => f.mount === '/') || fs[0];
 
     const systemInfo = {
@@ -28,21 +17,17 @@ export async function GET() {
       memory: {
         total: mem.total,
         free: mem.free,
-        used: mem.used, // Use mem.used instead of mem.active for better Linux compatibility
+        used: mem.used,
         usagePercentage: Math.round((mem.used / mem.total) * 100),
       },
       storage: {
         total: rootFs?.size || 0,
         used: rootFs?.used || 0,
         usagePercentage: Math.round(rootFs?.use || 0),
-      },
-      network: {
-        rx_sec: Math.round(net.rx_sec || 0), // Bytes per second download
-        tx_sec: Math.round(net.tx_sec || 0), // Bytes per second upload
       }
     };
 
-    const [projectCount, roadmapCount, profileStatus, profileStats, visits, comments] =
+    const [projectCount, roadmapCount, profileStatus, profileStats, visits, comments, visitorsByLocation] =
       await Promise.all([
         prisma.project.count(),
         prisma.roadmapItem.count(),
@@ -56,7 +41,7 @@ export async function GET() {
           orderBy: {
             date: 'asc'
           },
-          take: 30 // Last 30 days
+          take: 30
         }),
         prisma.comment.findMany({
           orderBy: [
@@ -65,7 +50,30 @@ export async function GET() {
           ],
           take: 50,
         }),
+        prisma.pageVisit.groupBy({
+          by: ['country'],
+          _count: {
+            ipAddress: true
+          },
+          where: {
+            country: {
+              not: null
+            }
+          },
+          orderBy: {
+            _count: {
+              ipAddress: 'desc'
+            }
+          }
+        }),
       ]);
+
+    const totalVisitorsWithLocation = visitorsByLocation.reduce((sum, loc) => sum + loc._count.ipAddress, 0);
+    const locationStats = visitorsByLocation.map(loc => ({
+      country: loc.country,
+      count: loc._count.ipAddress,
+      percentage: totalVisitorsWithLocation > 0 ? Math.round((loc._count.ipAddress / totalVisitorsWithLocation) * 100) : 0
+    }));
 
     return NextResponse.json({
       counts: {
@@ -79,6 +87,7 @@ export async function GET() {
       system: systemInfo,
       visits: visits.map((v: any) => ({ date: v.date, count: v._sum.count || 0 })),
       comments: comments,
+      locationStats: locationStats,
     });
   } catch (error) {
     console.error("Error fetching dashboard stats:", error);

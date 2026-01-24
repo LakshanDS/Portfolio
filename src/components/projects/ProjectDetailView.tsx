@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { MermaidDiagram } from "@/components/ui/MermaidDiagram";
 import { ExpandableModal } from "@/components/ui/ExpandableModal";
+import { CommentsSection } from "@/components/projects/CommentsSection";
 import { FaGithub, FaExternalLinkAlt, FaChevronLeft, FaCode, FaListUl } from "react-icons/fa";
 import { Project } from "@/lib/types";
 
@@ -380,6 +381,8 @@ export function ProjectDetailView({ project }: ProjectDetailViewProps) {
                 </div>
               )}
             </div>
+
+            <CommentsSection projectId={project.id} />
           </div>
 
         </div>

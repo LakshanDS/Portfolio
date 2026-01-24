@@ -50,8 +50,12 @@ jobs:
       # 4b. INITIALIZE DATABASE
       # ============================================
       # Create the database schema so the build doesn't fail during SSG
+      # Note: This uses a temporary DATABASE_URL for build-time only
       - name: Initialize Database
-        run: npx prisma db push --accept-data-loss
+        run: |
+          echo "Initializing database for build..."
+          # Apply migrations safely to build database
+          npx prisma migrate deploy || echo "No migrations to apply or migrations already applied"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
@@ -152,7 +156,18 @@ jobs:
             
             # Run database migrations (safe - only applies new changes)
             echo "Running database migrations..."
-            npx prisma migrate deploy || echo "No migrations to apply"
+            npx prisma migrate deploy || {
+              echo "❌ Migration failed! Rolling back deployment..."
+              # Restore previous version
+              [ -d ".next.backup.$(ls -t .next.backup.* 2>/dev/null | head -1 | sed 's/.next.backup.//')" ] && {
+                LATEST_BACKUP=$(ls -t .next.backup.* 2>/dev/null | head -1 | sed 's/.next.backup.//')
+                rm -rf .next
+                mv ".next.backup.$LATEST_BACKUP" .next
+                echo "Restored previous build from backup"
+              }
+              exit 1
+            }
+            echo "✅ Migrations applied successfully"
             
             # Clean up temporary files
             rm -rf /tmp/deploy-package /tmp/deploy-package.tar.gz

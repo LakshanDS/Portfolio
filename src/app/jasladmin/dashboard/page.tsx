@@ -13,9 +13,7 @@ import {
   FaMicrochip,
   FaMemory,
   FaHdd,
-  FaNetworkWired,
-  FaArrowUp,
-  FaArrowDown
+  FaNetworkWired
 } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import {
@@ -27,6 +25,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
+import VisitorLocationTracker from "@/components/analytics/VisitorLocationTracker";
 
 interface DashboardData {
   counts: {
@@ -50,10 +49,6 @@ interface DashboardData {
       used: number;
       usagePercentage: number;
     };
-    network: {
-      rx_sec: number;
-      tx_sec: number;
-    };
   };
   visits: Array<{ date: string; count: number }>;
   comments: Array<{
@@ -64,13 +59,17 @@ interface DashboardData {
     isRead: boolean;
     createdAt: string;
   }>;
+  locationStats: Array<{
+    country: string;
+    count: number;
+    percentage: number;
+  }>;
 }
 
 export default function AdminDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [togglingStatus, setTogglingStatus] = useState(false);
-  const [netHistory, setNetHistory] = useState<Array<{ time: string, rx: number, tx: number }>>([]);
 
   const router = useRouter();
 
@@ -78,21 +77,8 @@ export default function AdminDashboard() {
     try {
       const response = await fetch("/api/admin/dashboard", { cache: "no-store" });
       const json = await response.json();
-
       setData(json);
       setLoading(false);
-
-      setNetHistory(prev => {
-        const now = new Date().toLocaleTimeString();
-        const newPoint = {
-          time: now,
-          rx: json.system.network.rx_sec,
-          tx: json.system.network.tx_sec
-        };
-        const newHistory = [...prev, newPoint];
-        return newHistory.slice(-20);
-      });
-
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
@@ -100,8 +86,6 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 3000); // Poll every 3 seconds
-    return () => clearInterval(interval);
   }, []);
 
   const toggleStatus = async () => {
@@ -135,10 +119,6 @@ export default function AdminDashboard() {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const formatSpeed = (bytes: number) => {
-    return `${formatBytes(bytes)}/s`;
   };
 
   return (
@@ -272,52 +252,8 @@ export default function AdminDashboard() {
             </div>
           </Card>
 
-          {/* Network Graph */}
-          <Card className="p-6 bg-[#111827] border border-[#1F2937] bg-gradient-to-br from-[#111827] via-[#0D1117] to-black/40">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-[#E6EDF3] font-semibold flex items-center">
-                <span className="w-1 h-5 bg-blue-500 rounded-sm mr-3 shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span>
-                Network Activity (Live)
-              </h3>
-              <div className="flex gap-4 text-xs font-mono">
-                <span className="text-[#4ADE80] flex items-center gap-1"><FaArrowDown /> {formatSpeed(data.system.network.rx_sec)}</span>
-                <span className="text-blue-400 flex items-center gap-1"><FaArrowUp /> {formatSpeed(data.system.network.tx_sec)}</span>
-              </div>
-            </div>
-
-            <div className="h-[200px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={netHistory}>
-                  <defs>
-                    <linearGradient id="colorRx" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4ADE80" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#4ADE80" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorTx" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.2} />
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" vertical={false} />
-                  <XAxis dataKey="time" hide />
-                  <YAxis
-                    stroke="#4B5563"
-                    tick={{ fontSize: 10, fill: '#9CA3AF' }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(val) => formatBytes(val)}
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#E6EDF3', borderRadius: '8px' }}
-                    formatter={(value: number | undefined, name: string | undefined) => value !== undefined ? formatSpeed(value) : ''}
-                  />
-                  <Area type="monotone" dataKey="rx" stroke="#4ADE80" fill="url(#colorRx)" strokeWidth={2} name="Download" />
-                  <Area type="monotone" dataKey="tx" stroke="#3B82F6" fill="url(#colorTx)" strokeWidth={2} name="Upload" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-
+          {/* Visitor Location Tracker */}
+          <VisitorLocationTracker locationStats={data.locationStats} />
 
         </div>
 
@@ -367,7 +303,7 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Comments Scroller */}
-          <Card className="flex flex-col flex-1 min-h-[300px] bg-[#0D1117] border border-[#1F2937] overflow-hidden">
+          <Card className="flex flex-col h-[482px] bg-[#0D1117] border border-[#1F2937] overflow-hidden">
             <div className="p-3 bg-[#161B22] border-b border-[#1F2937] flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[#4ADE80] animate-pulse"></div>
               <span className="text-xs font-semibold text-[#E6EDF3] uppercase tracking-wider">Project Comments</span>

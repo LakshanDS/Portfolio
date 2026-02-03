@@ -158,7 +158,6 @@ Portfolio/
 ├── .env.example               # Environment variables template
 ├── .gitignore                 # Git ignore patterns
 ├── schema.sql                 # SQL schema reference
-├── install.sh                 # CI/CD installation script
 └── README.md                  # This file
 ```
 
@@ -279,31 +278,6 @@ The admin dashboard provides:
     ```bash
     npm start
     ```
-
-### Using Install Script (CI/CD)
-
-The included `install.sh` script automates deployment with automatic rollback on failure:
-
-```bash
-# Make executable
-chmod +x install.sh
-
-# Run the script
-./install.sh
-```
-
-The script handles:
-- Checking for GitHub updates
-- Running `git pull` if updates are available
-- Installing new packages if needed
-- Building the site
-- Restarting the site (using PM2 or systemd)
-- **Automatic rollback** to previous version if build fails
-
-**Requirements:**
-- Git repository must be initialized with proper remote
-- PM2 or systemd service configured for the application
-- Sufficient permissions to restart services
 
 ## Troubleshooting
 

@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { requireAuth } from "@/lib/api-auth";
 
 /**
  * Debug endpoint to check session cookies
  */
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get("admin_session");
   const csrfCookie = cookieStore.get("csrf_token");

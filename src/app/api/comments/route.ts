@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { requireAuth } from "@/lib/api-auth";
 
 const commentSchema = z.object({
     projectId: z.string().min(1, "Project ID is required"),
@@ -16,7 +17,7 @@ interface LocationData {
 
 async function getLocationFromIP(ip: string): Promise<LocationData | null> {
     try {
-        const response = await fetch(`http://ip-api.com/json/${ip}`);
+        const response = await fetch(`https://ip-api.com/json/${ip}`);
         if (!response.ok) return null;
         
         const data = await response.json();
@@ -92,6 +93,9 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
+    const authError = await requireAuth();
+    if (authError) return authError;
+
     try {
         const { searchParams } = new URL(req.url);
         const limit = parseInt(searchParams.get("limit") || "50");

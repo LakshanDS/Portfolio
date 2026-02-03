@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getExperience, createExperience, updateExperience, deleteExperience } from '@/lib/data'
+import { requireAuth } from '@/lib/api-auth'
 
 export async function GET() {
   try {

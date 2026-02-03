@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getEducation, createEducation, updateEducation, deleteEducation } from '@/lib/data'
+import { requireAuth } from '@/lib/api-auth'
 
 export async function GET() {
   try {

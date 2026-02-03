@@ -200,7 +200,7 @@ export default function AboutPage() {
 
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start">
                   {settings.buttons?.downloadResume?.enabled && (
-                    <Link href={settings.buttons.downloadResume.link || '#'}>
+                    <Link href={settings.buttons.downloadResume.link || '#'} prefetch={false}>
                       <Button variant="primary" size="md">
                         <FaEnvelope />
                         {settings.buttons.downloadResume.text}

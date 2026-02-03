@@ -42,31 +42,42 @@ async function convertImageToBase64(imagePath: string | undefined): Promise<stri
 
 export async function GET(request: Request) {
   const userAgent = request.headers.get('user-agent') || 'unknown';
-  const ip = request.headers.get('x-forwarded-for') || 'unknown';
+  const forwardedFor = request.headers.get('x-forwarded-for') || 'unknown';
+  const ip = forwardedFor.split(',')[0]?.trim() || 'unknown';
   const ipHash = Buffer.from(ip).toString('base64');
 
-  console.log(`Resume downloaded by: ${userAgent} (${ipHash})`);
+  const purpose = request.headers.get('purpose') || request.headers.get('sec-purpose') || '';
+  const middlewarePrefetch = request.headers.get('x-middleware-prefetch');
+  const nextPrefetch = request.headers.get('x-nextjs-prefetch');
+  const hasRange = request.headers.has('range');
+  const isPrefetch = purpose.includes('prefetch') || middlewarePrefetch === '1' || nextPrefetch === '1';
 
-  try {
-    const stats = await prisma.profileStats.findFirst();
-    if (stats) {
-      await prisma.profileStats.update({
-        where: { id: stats.id },
-        data: { resumeDownloads: { increment: 1 } }
-      });
-    } else {
-      await prisma.profileStats.create({
-        data: {
-          pipelinesFixed: "0",
-          projectsCount: 0,
-          selfCommits: 0,
-          experience: "0",
-          resumeDownloads: 1
-        }
-      });
+  if (!isPrefetch && !hasRange) {
+    console.log(`Resume downloaded by: ${userAgent} (${ipHash})`);
+
+    try {
+      const stats = await prisma.profileStats.findFirst();
+      if (stats) {
+        await prisma.profileStats.update({
+          where: { id: stats.id },
+          data: { resumeDownloads: { increment: 1 } }
+        });
+      } else {
+        await prisma.profileStats.create({
+          data: {
+            pipelinesFixed: "0",
+            projectsCount: 0,
+            selfCommits: 0,
+            experience: "0",
+            resumeDownloads: 1
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Failed to update resume stats", err);
     }
-  } catch (err) {
-    console.error("Failed to update resume stats", err);
+  } else {
+    console.log(`Skipping resume download count (prefetch=${isPrefetch}, range=${hasRange})`);
   }
 
   // Fetch data from database
@@ -186,4 +197,13 @@ export async function GET(request: Request) {
     console.error('Failed to generate PDF:', error);
     return new NextResponse('Failed to generate PDF', { status: 500 });
   }
+}
+
+export async function HEAD() {
+  return new NextResponse(null, {
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename="lakshan-desilva-resume.pdf"',
+    },
+  });
 }

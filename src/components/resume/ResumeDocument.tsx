@@ -245,8 +245,43 @@ const calculateAge = (dob?: string) => {
   return age;
 };
 
+type SocialPlatform = 'linkedin' | 'github';
+
+const getSocialHandle = (url?: string, platform?: SocialPlatform) => {
+  if (!url) return null;
+
+  const extractFromPath = (path: string) => {
+    const parts = path.split('/').filter(Boolean);
+    if (parts.length === 0) return null;
+
+    if (platform === 'linkedin') {
+      const sections = ['in', 'company', 'school', 'pub'];
+      if (sections.includes(parts[0]) && parts[1]) {
+        return parts[1];
+      }
+      return parts[parts.length - 1];
+    }
+
+    if (platform === 'github') {
+      return parts[0] || parts[parts.length - 1];
+    }
+
+    return parts[parts.length - 1];
+  };
+
+  try {
+    const normalized = url.startsWith('http') ? url : `https://${url}`;
+    const parsed = new URL(normalized);
+    return extractFromPath(parsed.pathname);
+  } catch {
+    return extractFromPath(url);
+  }
+};
+
 export const ResumeDocument = ({ profile, experience, education, projects, skills, roadmap, baseUrl }: ResumeProps) => {
   const age = calculateAge(profile.dateOfBirth);
+  const linkedinHandle = getSocialHandle(profile.linkedinUrl, 'linkedin');
+  const githubHandle = getSocialHandle(profile.githubUrl, 'github');
 
   return (
     <Document>
@@ -318,14 +353,18 @@ export const ResumeDocument = ({ profile, experience, education, projects, skill
           {profile.linkedinUrl && (
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>LinkedIn</Text>
-              <Link src={profile.linkedinUrl} style={styles.infoValue}>LinkedIn Profile</Link>
+              <Link src={profile.linkedinUrl} style={styles.infoValue}>
+                {linkedinHandle || 'LinkedIn Profile'}
+              </Link>
             </View>
           )}
 
           {profile.githubUrl && (
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>GitHub</Text>
-              <Link src={profile.githubUrl} style={styles.infoValue}>GitHub Profile</Link>
+              <Link src={profile.githubUrl} style={styles.infoValue}>
+                {githubHandle || 'GitHub Profile'}
+              </Link>
             </View>
           )}
 

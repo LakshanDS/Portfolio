@@ -280,6 +280,49 @@ export default async function Home() {
         </section>
       )}
 
+      {/* Featured Projects Preview */}
+      {settings.sections?.projects?.enabled && (
+        <section className="py-24 px-6 bg-[#0B0F14]">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col mb-12">
+              <h2 className="text-sm font-mono text-[#4ADE80] uppercase tracking-[0.3em] mb-2">
+                {settings.sections?.projects?.subtitle || ""}
+              </h2>
+              <div className="flex items-end justify-between">
+                <h3 className="text-[#E6EDF3] text-2xl md:text-3xl font-bold leading-tight pb-3">
+                  {settings.sections?.projects?.title || ""}
+                </h3>
+                <Link href="/projects">
+                  <Button variant="ghost" className="group">
+                    View All Systems{" "}
+                    <span className="group-hover:translate-x-1 transition-transform ml-2">
+                      →
+                    </span>
+                  </Button>
+                </Link>
+              </div>
+              <div className="h-1 w-20 bg-[#4ADE80] rounded-full"></div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {projects.length > 0 ? (
+                projects.map((project, index) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project as any}
+                    index={index}
+                  />
+                ))
+              ) : (
+                <p className="text-[#6B7280] font-mono">
+                  No active deployments found in registry.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Latest Roadmap Section */}
       {settings.sections?.roadmap?.enabled && (
         <section className="py-24 px-6 bg-[#0B0F14] relative">
@@ -534,48 +577,6 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Featured Projects Preview */}
-      {settings.sections?.projects?.enabled && (
-        <section className="py-24 px-6 bg-[#0B0F14]">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col mb-12">
-              <h2 className="text-sm font-mono text-[#4ADE80] uppercase tracking-[0.3em] mb-2">
-                {settings.sections?.projects?.subtitle || ""}
-              </h2>
-              <div className="flex items-end justify-between">
-                <h3 className="text-[#E6EDF3] text-2xl md:text-3xl font-bold leading-tight pb-3">
-                  {settings.sections?.projects?.title || ""}
-                </h3>
-                <Link href="/projects">
-                  <Button variant="ghost" className="group">
-                    View All Systems{" "}
-                    <span className="group-hover:translate-x-1 transition-transform ml-2">
-                      →
-                    </span>
-                  </Button>
-                </Link>
-              </div>
-              <div className="h-1 w-20 bg-[#4ADE80] rounded-full"></div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {projects.length > 0 ? (
-                projects.map((project, index) => (
-                  <ProjectCard
-                    key={project.id}
-                    project={project as any}
-                    index={index}
-                  />
-                ))
-              ) : (
-                <p className="text-[#6B7280] font-mono">
-                  No active deployments found in registry.
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
 
       {settings.sections?.cta?.enabled && (
         <CallToAction

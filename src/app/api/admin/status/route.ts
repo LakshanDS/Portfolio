@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/api-auth";
 
 export async function POST(request: Request) {
+    const authError = await requireAuth();
+    if (authError) return authError;
+
     try {
         const { isOpenToWork } = await request.json();
 

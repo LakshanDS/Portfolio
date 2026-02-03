@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
 import {
   getAllSkills,
   createSkillCategory,
@@ -23,6 +24,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const data = await request.json();
     const { type, ...rest } = data;
@@ -50,6 +54,9 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const data = await request.json();
     const { type, id, ...rest } = data;
@@ -85,6 +92,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");

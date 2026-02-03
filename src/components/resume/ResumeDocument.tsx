@@ -230,6 +230,7 @@ interface ResumeProps {
     skills: { name: string }[];
   }[];
   roadmap?: RoadmapItem[];
+  baseUrl?: string;
 }
 
 const calculateAge = (dob?: string) => {
@@ -244,7 +245,7 @@ const calculateAge = (dob?: string) => {
   return age;
 };
 
-export const ResumeDocument = ({ profile, experience, education, projects, skills, roadmap }: ResumeProps) => {
+export const ResumeDocument = ({ profile, experience, education, projects, skills, roadmap, baseUrl }: ResumeProps) => {
   const age = calculateAge(profile.dateOfBirth);
 
   return (
@@ -280,13 +281,6 @@ export const ResumeDocument = ({ profile, experience, education, projects, skill
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Gender</Text>
               <Text style={styles.infoValue}>{profile.gender}</Text>
-            </View>
-          )}
-
-          {profile.nic && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>NIC</Text>
-              <Text style={styles.infoValue}>{profile.nic}</Text>
             </View>
           )}
 
@@ -409,8 +403,8 @@ export const ResumeDocument = ({ profile, experience, education, projects, skill
               <View key={i} style={styles.itemContainer} wrap={false}>
                 <View style={styles.itemHeader}>
                   <Text style={styles.itemTitle}>{project.title}</Text>
-                  {project.demoUrl && (
-                    <Link src={project.demoUrl} style={styles.projectLink}>View Demo</Link>
+                  {project.id && baseUrl && (
+                    <Link src={`${baseUrl}/projects/${project.id}`} style={styles.projectLink}>See Doc</Link>
                   )}
                 </View>
                 <Text style={styles.itemDescription}>{project.description}</Text>

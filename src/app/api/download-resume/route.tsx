@@ -156,6 +156,11 @@ export async function GET(request: Request) {
       address: "4C1, Ballawila, Kosmulla, Neluwa, Galle. 80082",
     };
 
+  // Get base URL from request headers
+  const host = request.headers.get('host') || 'localhost:3000';
+  const protocol = host.includes('localhost') ? 'http' : 'https';
+  const baseUrl = `${protocol}://${host}`;
+
   const resumeDocument = (
     <ResumeDocument
       profile={profileData}
@@ -164,6 +169,7 @@ export async function GET(request: Request) {
       education={education}
       skills={allSkills}
       roadmap={roadmapItems}
+      baseUrl={baseUrl}
     />
   );
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { unlink } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
+import { requireAuth } from "@/lib/api-auth";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 
@@ -13,6 +14,10 @@ const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
  */
 
 export async function POST(request: NextRequest) {
+  // SECURITY: Require authentication
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const body = await request.json();
     const { filePath } = body;
@@ -32,8 +37,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // SECURITY FIX: Prevent path traversal attacks
+    const normalizedPath = path.normalize(filePath);
+    if (normalizedPath.includes("..") || !normalizedPath.startsWith("/uploads/")) {
+      return NextResponse.json(
+        { success: false, error: "Invalid file path - path traversal detected" },
+        { status: 400 }
+      );
+    }
+
     // Construct full file path
-    const fullPath = path.join(process.cwd(), "public", filePath);
+    const fullPath = path.join(process.cwd(), "public", normalizedPath);
+
+    // Additional security check: ensure resolved path is still in uploads
+    const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    if (!fullPath.startsWith(uploadsDir)) {
+      return NextResponse.json(
+        { success: false, error: "Access denied - invalid path" },
+        { status: 403 }
+      );
+    }
 
     // Check if file exists
     if (!existsSync(fullPath)) {

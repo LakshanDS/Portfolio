@@ -1,9 +1,50 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { cookies } from "next/headers";
-import { getSession } from "@/lib/server-auth";
 
 const SESSION_COOKIE_NAME = "admin_session";
+
+type SessionShape = {
+  userId: string;
+  token: string;
+  expiresAt: number;
+  signature: string;
+};
+
+function parseSessionCookie(value: string): SessionShape | null {
+  try {
+    return JSON.parse(decodeURIComponent(value));
+  } catch {
+    return null;
+  }
+}
+
+async function verifySessionSignature(session: SessionShape): Promise<boolean> {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) return false;
+
+  const data = `${session.userId}:${session.token}:${session.expiresAt}`;
+  const encoder = new TextEncoder();
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    encoder.encode(data)
+  );
+
+  const expected = Array.from(new Uint8Array(signature))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  return expected === session.signature;
+}
 
 /**
  * Middleware to protect admin routes
@@ -33,7 +74,11 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      const session = JSON.parse(sessionCookie.value);
+      const session = parseSessionCookie(sessionCookie.value);
+
+      if (!session) {
+        return NextResponse.redirect(new URL("/jasladmin/login", request.url));
+      }
 
       console.log("[MIDDLEWARE] Session data:", {
         userId: session.userId,
@@ -43,6 +88,13 @@ export async function middleware(request: NextRequest) {
       // Check if session is expired
       if (Date.now() > session.expiresAt) {
         console.log("[MIDDLEWARE] Session expired, redirecting to login");
+        return NextResponse.redirect(new URL("/jasladmin/login", request.url));
+      }
+
+      // Verify session signature to prevent cookie forgery
+      const isValid = await verifySessionSignature(session);
+      if (!isValid) {
+        console.log("[MIDDLEWARE] Session signature invalid, redirecting to login");
         return NextResponse.redirect(new URL("/jasladmin/login", request.url));
       }
 

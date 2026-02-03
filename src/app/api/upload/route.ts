@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
+import { requireAuth } from "@/lib/api-auth";
 
 /**
  * File Upload API Endpoint
@@ -54,6 +55,10 @@ function generateUniqueFilename(prefix: string, extension: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  // SECURITY: Require authentication
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     await ensureUploadsDir();
 

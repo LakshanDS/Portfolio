@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import si from "systeminformation";
+import { requireAuth } from "@/lib/api-auth";
 
 export async function GET() {
+  // SECURITY: Require authentication
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const [cpu, mem, fs] = await Promise.all([
       si.currentLoad(),

@@ -12,6 +12,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const body = await request.json()
     const exp = await createExperience(body)
@@ -23,6 +26,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const body = await request.json()
     const { id, ...data } = body
@@ -35,6 +41,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')

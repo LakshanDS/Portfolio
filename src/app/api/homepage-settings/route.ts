@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/api-auth";
 
 /**
  * Homepage settings are stored in the singleton `CmsSettings` row (id = "default").

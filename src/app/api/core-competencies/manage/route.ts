@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/api-auth";
 
 export async function PUT(request: Request) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   console.log("PUT request started");
   try {
     const body = await request.json();

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getProfile, updateProfile, getProfileStats, updateProfileStats } from "@/lib/data";
+import { requireAuth } from "@/lib/api-auth";
 
 export async function GET() {
   try {
@@ -19,6 +20,9 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
+  const authError = await requireAuth();
+  if (authError) return authError;
+
   try {
     const data = await request.json();
     let { profileId, statsId, profileData, statsData } = data;

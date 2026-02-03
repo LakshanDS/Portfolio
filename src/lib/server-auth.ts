@@ -93,6 +93,18 @@ export async function getSession(): Promise<Session | null> {
       return null;
     }
 
+    // SECURITY FIX: Verify session signature
+    const expectedSignature = await signSession({
+      userId: session.userId,
+      token: session.token,
+      expiresAt: session.expiresAt,
+    });
+
+    if (session.signature !== expectedSignature) {
+      console.warn("[SECURITY] Session signature verification failed");
+      return null;
+    }
+
     return session;
   } catch {
     return null;

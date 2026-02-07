@@ -282,6 +282,9 @@ export const ResumeDocument = ({ profile, experience, education, projects, skill
   const age = calculateAge(profile.dateOfBirth);
   const linkedinHandle = getSocialHandle(profile.linkedinUrl, 'linkedin');
   const githubHandle = getSocialHandle(profile.githubUrl, 'github');
+  const liveProjects = projects.filter((project) => project.status === 'live');
+  const keyProjects = (liveProjects.length > 0 ? liveProjects : projects).slice(0, 1);
+  const developingProjects = projects.filter((project) => project.status === 'developing');
 
   return (
     <Document>
@@ -400,6 +403,74 @@ export const ResumeDocument = ({ profile, experience, education, projects, skill
             <Text style={styles.summaryText}>{profile.bio}</Text>
           </View>
 
+          {/* key project */}
+          {keyProjects.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Key Project</Text>
+              {keyProjects.map((project, i) => (
+                <View key={i} style={styles.itemContainer} wrap={false}>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemTitle}>{project.title}</Text>
+                    {project.id && baseUrl && (
+                      <Link src={`${baseUrl}/projects/${project.id}`} style={styles.projectLink}>See Doc</Link>
+                    )}
+                  </View>
+                  <Text style={styles.itemDescription}>{project.description}</Text>
+                  {project.tags && project.tags.length > 0 && (
+                    <View style={styles.projectTags}>
+                      {project.tags.slice(0, 5).map((tag, j) => (
+                        <Text key={j} style={styles.projectTag}>{tag}</Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* developing projects */}
+          {developingProjects.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Developing Projects</Text>
+              {developingProjects.map((project, i) => (
+                <View key={i} style={styles.itemContainer} wrap={false}>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemTitle}>{project.title}</Text>
+                    {project.id && baseUrl && (
+                      <Link src={`${baseUrl}/projects/${project.id}`} style={styles.projectLink}>See Doc</Link>
+                    )}
+                  </View>
+                  <Text style={styles.itemDescription}>{project.description}</Text>
+                  {project.tags && project.tags.length > 0 && (
+                    <View style={styles.projectTags}>
+                      {project.tags.slice(0, 5).map((tag, j) => (
+                        <Text key={j} style={styles.projectTag}>{tag}</Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Roadmap / Focus */}
+          {roadmap && roadmap.length > 0 && (
+            <View wrap={false}>
+              <Text style={styles.sectionTitle}>Current Focus</Text>
+              {roadmap.map((item, i) => (
+                <View key={i} style={styles.itemContainer}>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemTitle}>{item.title}</Text>
+                    <Text style={{ ...styles.itemDate, textTransform: 'capitalize' }}>
+                      {item.status.replace('-', ' ')}
+                    </Text>
+                  </View>
+                  <Text style={styles.itemDescription}>{item.description}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
           {/* Education */}
           <View>
             <Text style={styles.sectionTitle}>Education</Text>
@@ -434,47 +505,6 @@ export const ResumeDocument = ({ profile, experience, education, projects, skill
               </View>
             ))}
           </View>
-
-          {/* key projects */}
-          <View>
-            <Text style={styles.sectionTitle}>Key Projects</Text>
-            {projects.slice(0, 3).map((project, i) => (
-              <View key={i} style={styles.itemContainer} wrap={false}>
-                <View style={styles.itemHeader}>
-                  <Text style={styles.itemTitle}>{project.title}</Text>
-                  {project.id && baseUrl && (
-                    <Link src={`${baseUrl}/projects/${project.id}`} style={styles.projectLink}>See Doc</Link>
-                  )}
-                </View>
-                <Text style={styles.itemDescription}>{project.description}</Text>
-                {project.tags && project.tags.length > 0 && (
-                  <View style={styles.projectTags}>
-                    {project.tags.slice(0, 5).map((tag, j) => (
-                      <Text key={j} style={styles.projectTag}>{tag}</Text>
-                    ))}
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
-
-          {/* Roadmap / Focus */}
-          {roadmap && roadmap.length > 0 && (
-            <View wrap={false}>
-              <Text style={styles.sectionTitle}>Current Focus</Text>
-              {roadmap.map((item, i) => (
-                <View key={i} style={styles.itemContainer}>
-                  <View style={styles.itemHeader}>
-                    <Text style={styles.itemTitle}>{item.title}</Text>
-                    <Text style={{ ...styles.itemDate, textTransform: 'capitalize' }}>
-                      {item.status.replace('-', ' ')}
-                    </Text>
-                  </View>
-                  <Text style={styles.itemDescription}>{item.description}</Text>
-                </View>
-              ))}
-            </View>
-          )}
 
         </View>
       </Page>

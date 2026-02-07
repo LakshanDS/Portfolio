@@ -183,6 +183,7 @@ export default async function Home() {
 
                 const statusConfig = {
                   Expert: { color: "bg-[#4ADE80]", label: "Expert" },
+                  Advanced: { color: "bg-[#60A5FA]", label: "Advanced" },
                   Intermediate: {
                     color: "bg-[#FBBF24]",
                     label: "Intermediate",

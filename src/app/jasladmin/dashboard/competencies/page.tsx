@@ -144,6 +144,7 @@ export default function AdminCompetencies() {
   const getStatusDot = (expertise: string) => {
     const statusConfig = {
       'Expert': { color: 'bg-[#4ADE80]', label: 'Expert' },
+      'Advanced': { color: 'bg-[#60A5FA]', label: 'Advanced' },
       'Intermediate': { color: 'bg-[#FBBF24]', label: 'Intermediate' },
       'Beginner': { color: 'bg-[#F97316]', label: 'Beginner' }
     };
@@ -293,6 +294,7 @@ export default function AdminCompetencies() {
                   <option value="">Select expertise level</option>
                   <option value="Beginner">Beginner</option>
                   <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
                   <option value="Expert">Expert</option>
                 </select>
               </div>

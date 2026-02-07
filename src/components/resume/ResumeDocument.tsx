@@ -283,8 +283,10 @@ export const ResumeDocument = ({ profile, experience, education, projects, skill
   const linkedinHandle = getSocialHandle(profile.linkedinUrl, 'linkedin');
   const githubHandle = getSocialHandle(profile.githubUrl, 'github');
   const liveProjects = projects.filter((project) => project.status === 'live');
-  const keyProjects = (liveProjects.length > 0 ? liveProjects : projects).slice(0, 1);
-  const developingProjects = projects.filter((project) => project.status === 'developing');
+  const keyProjects = (liveProjects.length > 0 ? liveProjects : projects).slice(0, 3);
+  const developingProjects = projects
+    .filter((project) => project.status === 'developing')
+    .slice(0, 3);
 
   return (
     <Document>

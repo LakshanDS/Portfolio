@@ -282,10 +282,16 @@ export const ResumeDocument = ({ profile, experience, education, projects, skill
   const age = calculateAge(profile.dateOfBirth);
   const linkedinHandle = getSocialHandle(profile.linkedinUrl, 'linkedin');
   const githubHandle = getSocialHandle(profile.githubUrl, 'github');
-  const liveProjects = projects.filter((project) => project.status === 'live');
+  const normalizeStatus = (status?: string) => {
+    const normalized = (status ?? '').toString().trim().toLowerCase();
+    if (normalized === 'archive') return 'archived';
+    if (normalized === 'devloping') return 'developing';
+    return normalized;
+  };
+  const liveProjects = projects.filter((project) => normalizeStatus(project.status) === 'live');
   const keyProjects = (liveProjects.length > 0 ? liveProjects : projects).slice(0, 3);
   const developingProjects = projects
-    .filter((project) => project.status === 'developing')
+    .filter((project) => normalizeStatus(project.status) === 'developing')
     .slice(0, 3);
 
   return (

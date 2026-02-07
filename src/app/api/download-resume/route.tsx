@@ -90,9 +90,15 @@ export async function GET(request: Request) {
     getRoadmapItems(),
   ]);
 
+  const normalizeStatus = (status?: string) => {
+    const normalized = (status ?? '').toString().trim().toLowerCase();
+    if (normalized === 'archive') return 'archived';
+    if (normalized === 'devloping') return 'developing';
+    return normalized;
+  };
+
   const projects = allProjects
-    .filter((p: any) => p.status === 'live')
-    .slice(0, 3); // Top 4 projects only
+    .filter((p: any) => normalizeStatus(p.status) !== 'archived');
 
   // Filter roadmap items (e.g., in-progress or top priority)
   const roadmapItems = allRoadmapItems

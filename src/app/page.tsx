@@ -70,7 +70,7 @@ export default async function Home() {
     coreCompetencies,
     homepageSettings,
   ] = await Promise.all([
-    getProjects().then((res) => res.slice(0, 3)),
+    getProjects().then((res) => res.slice(0, 6)),
     getProfileStatus(),
     getRoadmapItems(),
     getAboutSettings(),
